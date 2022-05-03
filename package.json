@@ -1,0 +1,24 @@
+{
+  "name": "islands-to-port-eighty",
+  "version": "0.0.1",
+  "description": "Language activating between islands",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/notkrd/islands-to-port-eighty.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/notkrd/islands-to-port-eighty/issues"
+  },
+  "homepage": "https://github.com/notkrd/islands-to-port-eighty#readme",
+  "dependencies": {
+    "express": "^4.18.1",
+    "peer": "^0.6.1",
+    "pug": "^3.0.2"
+  }
+}
