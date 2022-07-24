@@ -31,7 +31,7 @@ const rand_element = (word_set) => [...word_set][Math.floor(Math.random()*word_s
 const PLACEHOLDER = "[...]"
 class Island {
     name;
-    grammar = new Set();
+    grammar = new Map();
     ontology = new Map();
     lexicon = new Map(); // Map from tags to words belonging to them
     
@@ -80,10 +80,10 @@ class Island {
         }
     }
 
-    static say_something(isle) {
-        const s = isle.grammar.size > 0 ? rand_element(isle.grammar).map(
-            (c) => this.some_thing(isle, c))
-            : PLACEHOLDER
+    static say_something(isle, of_cat="proclamation") {
+        const s = isle.grammar.has(of_cat) && isle.grammar.get(of_cat).size > 0 ? rand_element(
+            isle.grammar.get(of_cat)).map((c) => this.some_thing(isle, c))
+            : [PLACEHOLDER]
         return s.join(' ')
     }
         
@@ -114,10 +114,11 @@ function add_utterance(tablet, glyph) {
 }
 
 const new_paxos = new Island("New Paxos (Ionia)",
-    new Set([
-        ["institution", "ruling"],
-        ["act", "thing", "ruling"],
-        ["institution", "usage", "thing"]
+    new Map([
+        ["proclamation", new Set([
+            ["institution", "ruling"],
+            ["act", "thing", "ruling"],
+            ["institution", "usage", "thing"]])]
     ]),
     new Map([
         ["institution", new Set(["organization"])],
@@ -136,9 +137,11 @@ const new_paxos = new Island("New Paxos (Ionia)",
     );
 
 const pyrgi = new Island("Pyrgi (Latium)",
-    new Set ([
-        ["title", "name", "act", "building", "relation", "period", "event"],
-        ["connective", "place", "connective", "period", "connective", "cosmic_entity"]
+    new Map ([
+        ["proclamation", new Set([
+            ["title", "name", "act", "building", "relation", "period", "event"],
+            ["connective", "place", "connective", "period", "connective", "cosmic_entity"]
+        ])]
     ]),
     new Map([
         ["role", new Set(["relation"])],
@@ -170,9 +173,11 @@ const pyrgi = new Island("Pyrgi (Latium)",
 )
 
 const uruk = new Island("Uruk (Sumer)",
-    new Set([
-        ["command", "direction", "building", "command", "direction", "determiner", "solid", "architecture"],
-        ["pronoun", "social_action", "being"]
+    new Map([
+        ["proclamation", new Set([
+            ["command", "direction", "building", "command", "direction", "determiner", "solid", "architecture"],
+            ["pronoun", "social_action", "being"]
+        ])]
     ]),
     new Map([
         ["building", new Set(["architecture"])],
