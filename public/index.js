@@ -1,24 +1,3 @@
-console.log('Whispers.')
-const super_secret = String(Math.random()).substring(2)
-const isle_id = `island${super_secret}`
-console.log(`I am ${isle_id}`)
-const navigator_port = 3000
-let islands_known = new Set()
-
-const navigator = new Peer(isle_id, {
-    host: 'localhost',
-    port: navigator_port,
-    path: '/navigator'
-})
-
-const socket = io()
-
-socket.on('islands', function(isls) {
-    console.log(isls)
-    islands_known = new Set(isls)
-    console.log(islands_known)
-})
-
 let my_globe = {}
 const union = (a, b) => [...b].reduce((u, elem) => u.add(elem), new Set([...a]))
 const intersection = (a, b) => [...a].reduce(
@@ -31,14 +10,25 @@ const rand_element = (word_set) => [...word_set][Math.floor(Math.random()*word_s
 const PLACEHOLDER = "[...]"
 class Island {
     name;
-    grammar = new Map();
+    utterances = new Set();
     ontology = new Map();
-    lexicon = new Map(); // Map from tags to words belonging to them
+    lexicon = new Map(); // Map from phrases to categories they belong to
     
     static init_ontology = new Map([
         ["object", new Set()],
         ["relation", new Set()],
+        ["attribute", new Set()],
+        ["action", new Set()],
         ["place", new Set(["object"])],
+        ["animal", new Set(["object"])],
+        ["plant", new Set(["object"])],
+        ["person", new Set(["object"])],
+        ["food", new Set(["object"])],
+        ["structure", new Set(["object"])],
+        ["gift", new Set(["action"])],
+        ["attack", new Set(["action"])],
+        ["travel", new Set(["action"])],
+        ["quantity", new Set(["attribute"])],
         ["organization", new Set(["object"])]
     ]); // The ontology is a genealogical map from categories to the other categories they they instance. Beware circularity?
     
@@ -51,183 +41,97 @@ class Island {
                     (ancs, new_cat) => union(ancs, all_ancestors(new_cat, ancs.add(cat))), 
                     known_ancestors)
                 : known_ancestors.add(cat)
-            } 
+            }
+            else {
+                return new Set()
+            }
         }
         
         ont.forEach((_supers, cat) => ont.set(cat, all_ancestors(cat, new Set())))
     }
     
     static elaborate(ont, lex) {
-        ont.forEach((supers, cat) => {
-            supers.forEach((new_cat) => {
-                lex.set(new_cat, 
-                    (lex.has(new_cat) && lex.has(cat)) ? union(lex.get(new_cat), lex.get(cat)) 
-                    : lex.has(new_cat) ? lex.get(new_cat) 
-                    : lex.has(cat) ? lex.get(cat) 
-                    : new Set()
-                    );
+        lex.forEach((cats, word) => {
+            cats.forEach((supers, cat) => {
+                if (ont.has(cat)) {
+                    lex.set(word, union(cats, supers))
+                }
             });
         });
     }
 
-    static some_thing(isle, of_cat) {
-        if (isle.lexicon.has(of_cat)) {
-                const words = isle.lexicon.get(of_cat)
-                return words.size > 0 ? rand_element(words) : PLACEHOLDER
-            }
-        else {
-            return PLACEHOLDER
-        }
-    }
-
-    static say_something(isle, of_cat="proclamation") {
-        const s = isle.grammar.has(of_cat) && isle.grammar.get(of_cat).size > 0 ? rand_element(
-            isle.grammar.get(of_cat)).map((c) => this.some_thing(isle, c))
+    static say_something(isle) {
+        const s = isle.utterances.size > 0 ? rand_element(isle.utterances)
             : [PLACEHOLDER]
         return s.join(' ')
     }
         
-    constructor(name, grammar, ontology, lexicon) {
+    constructor(name, utterances, ontology, lexicon) {
         this.name = name;
-        this.grammar = grammar;
+        this.utterances = utterances;
         this.ontology = new Map([...Island.init_ontology, ...ontology]);
-        this.lexicon = lexicon;
-        
-        this.ontology.set("object", new Set());
-        this.ontology.set("relation", new Set());
-        this.ontology.set("place", new Set(["object"]));
-        this.ontology.set("organization", new Set(["object"]));
-        
+        this.lexicon = lexicon;        
         Island.propogate_ontology(this.ontology);
         Island.elaborate(this.ontology, this.lexicon);
     }
 }
 
-function add_utterance(tablet, glyph) {
-    const cell = document.createElement("div")
-    cell.setAttribute("class", "cell")
-    const inscrit = document.createElement("p")
-    inscrit.setAttribute("class", "glyph")
-    inscrit.innerText = glyph
-    cell.appendChild(inscrit)
-    tablet.appendChild(cell)
-}
-
-const new_paxos = new Island("New Paxos (Ionia)",
-    new Map([
-        ["proclamation", new Set([
-            ["institution", "ruling"],
-            ["act", "thing", "ruling"],
-            ["institution", "usage", "thing"]])]
+const new_paxos = new Island("Paxos (Unreal Ionia)",
+    new Set([
+        ["the", "olive", "tax", "is", "3", "drachmas", "per", "ton"],
+        ["lamps", "must", "use", "only", "olive", "oil"],
+        ["painting", "on", "temple", "walls", "is", "forbidden"],
+        ["freedom", "of", "artistic", "expression", "is", "guaranteed"],
+        ["the", "sale", "of", "brown", "goats", "is", "permitted"],
+        ["the", "sale", "of", "black", "goats", "is", "permitted"],
+        ["the", "olive", "tax", "is", "9", "drachmas", "per", "ton"]
     ]),
     new Map([
-        ["institution", new Set(["organization"])],
-        ["ruling", new Set(["relation"])],
-        ["act", new Set(["relation"])],
-        ["thing", new Set(["object"])],
-        ["usage", new Set(["relation"])]
+        ["building", new Set(["structure"])],
+        ["legality", new Set (["attribute"])],
+        ["obligation", new Set (["relation"])],
+        ["number", new Set (["attribute"])],
+        ["right", new Set (["institution"])],
     ]),
     new Map([
-        ["thing", new Set(["olive oil", "lamp(s)", "temple walls", "the chamber"])],
-        ["institution", new Set(["the synod", "freedom of artistic expression", "the parliament", "the priesthood"])],
-        ["act", new Set(["painting"])],
-        ["usage", new Set(["must use only", "may not use"])],
-        ["ruling", new Set(["is forbidden / outlawed", "is guaranteed / protected"])],
-    ]),
-    );
-
-const pyrgi = new Island("Pyrgi (Latium)",
-    new Map ([
-        ["proclamation", new Set([
-            ["title", "name", "act", "building", "relation", "period", "event"],
-            ["connective", "place", "connective", "period", "connective", "cosmic_entity"]
-        ])]
-    ]),
-    new Map([
-        ["role", new Set(["relation"])],
-        ["title", new Set(["role"])],
-        ["name", new Set(["object"])],
-        ["act", new Set(["relation"])],
-        ["building", new Set(["place"])],
-        ["period", new Set(["object"])],
-        ["event", new Set(["object"])],
-        ["site", new Set(["place"])],
-        ["cosmic_entity", new Set(["object"])],
-        ["connective", new Set(["relation"])],
-        ["place", new Set([])],
-        ["institution", new Set([])],
-        ["relation", new Set([])],
-        ["object", new Set([])]
-    ]),
-    new Map([
-        ["title", new Set(["King", "Lady", "Monarch"])],
-        ["name", new Set(["Astarte", "Velianas"])],
-        ["act", new Set(["built", "made", "offered", "requested"])],
-        ["building", new Set(["the temple", "the aedicule", "the statue"])],
-        ["connective", new Set(["is", "in", "as", "for", "(may be)"])],
-        ["period", new Set(["the month", "the day", "the year"])],
-        ["event", new Set(["of Kiriari", "three of their reign", "of the diety's burial"])],
-        ["site", new Set(["Caere", "Astarte's temples", "the holy place"])],
-        ["cosmic_entity", new Set(["the stars"])]
-    ]),
-)
-
-const uruk = new Island("Uruk (Sumer)",
-    new Map([
-        ["proclamation", new Set([
-            ["command", "direction", "building", "command", "direction", "determiner", "solid", "architecture"],
-            ["pronoun", "social_action", "being"]
-        ])]
-    ]),
-    new Map([
-        ["building", new Set(["architecture"])],
-        ["architecture", new Set(["place"])],
-        ["distance", new Set(["relation"])],
-        ["liquid", new Set(["substance"])],
-        ["place", new Set(["object"])],
-        ["simile", new Set(["relation"])],
-        ["solid", new Set(["substance"])],
-        ["substance", new Set(["object"])],
-        ["direction", new Set(["relation"])],
-        ["number", new Set(["object"])],
-        ["command", new Set(["relation"])],
-        ["attribute", new Set(["object"])],
-        ["being", new Set(["object"])],
-        ["animal", new Set(["being"])],
-        ["person", new Set(["being"])],
-        ["determiner", new Set(["relation"])],
-        ["pronoun", new Set(["object"])],
-        ["possessive", new Set(["relation"])],
-        ["social_action", new Set(["relation"])],
-        ["relation", new Set([])],
-        ["object", new Set([])]
-    ]),
-    new Map([
-        ["role", new Set(["king", "sage", "wife", "guard"])],
-        ["liquid", new Set(["beer", "oil", "water"])],
-        ["solid", new Set(["stone", "clay", "brick", "copper", "bronze"])],
-        ["simile", new Set(["like", "as", ])],
-        ["direction", new Set(["up on", "close to", "up to", "around"])],
-        ["distance", new Set(["league(s)"])],
-        ["number", new Set(["one", "three", "seven"])],
-        ["command", new Set(["go", "look", "take hold", "inspect"])],
-        ["attribute", new Set(["silence", "strength", "thirst"])],
-        ["animal", new Set(["gazelles", "animals"])],
-        ["person", new Set(["wom(a/e)n", "herder(s)"])],
-        ["architecture", new Set(["inner wall", "threshold stone", "foundation", "structure"])],
-        ["social_action", new Set(["ate with", "drank with", "knew", "jostled with"])],
-        ["building", new Set(["(the) wall", "(the) temple"])],
-        ["determiner", new Set(["the", "its"])],
-        ["pronoun", new Set(["you", "he(/him)", "she(/her)"])],
-        ["possessive", new Set(["your(s)", "his", "hers"])]
+        [["olive"], new Set(["food", "plant"])],
+        [["must", "use", "only"], new Set (["obligation"])],
+        [["is","forbidden"], new Set (["legality"])],
+        [["is","guaranteed"], new Set (["legality"])],
+        [["painting"], new Set (["action"])],
+        [["temple","walls"], new Set (["building"])],
+        [["freedom","of", "artistic", "expression"], new Set (["building"])],
     ])
 )
 
+const pyrgi = new Island("Pyrgi (Latium)",
+new Set([
+    ["for", "the", "lady", "astarte", "this", "is", "the", "holy", "place"],
+    ["which", "made", "and", "which", "offered", "Thefarie", "Velianas", "king", "over", "Caere", "the", "month", "of", "solar", "sacrifice", "as", "gift", "in", "the", "temple"],
+    ["and", "he", "built", "an", "aedicule", "because", "Astarte", "requested", "it", "from", "him"],
+    ["year", "3", "of", "his", "reign", "in", "the", "month", "of", "Kirani", "on", "the", "day", "of", "the", "deity's", "burial"],
+    ["and", "as", "for", "the", "years", "of", "the", "deity's", "statue", "in", "her", "temple", "these", "may", "be", "so", "many", "years", "as", "the", "stars"]
+]),
+new Map([]),
+new Map([])
+)
 
 my_globe = {
     "new_paxos": new_paxos,
-    "pyrgi": pyrgi,
-    "uruk": uruk
+    "pyrgi": pyrgi
+}
+
+function add_utterance(tablet, glyphs) {
+    const cell = document.createElement("div")
+    cell.setAttribute("class", "cell")
+    const inscrit = document.createElement("p")
+    inscrit.setAttribute("class", "glyphs")
+    inscrit.innerText = glyphs
+    cell.appendChild(inscrit)
+    tablet.appendChild(cell)
+}
+function erase(tablet) {
+    tablet.innerHTML = ""
 }
     
 const speak_btn = document.getElementById("speakbtn")
@@ -245,6 +149,85 @@ Object.entries(my_globe).forEach(([isle_key, isle_val]) =>
 this_isle = new_paxos
 port_select.addEventListener("change", function(){ this_isle=my_globe[port_select.value] })
 const the_tablet = document.getElementById("thetablet")
+const islands_list = document.getElementById("islandslist")
 
+last_tried = 0
+prev_bal = 0
+next_bal = 0
+curr_status = "IDLE"
+prev_votes = new Set()
 
-speak_btn.onclick = function () { add_utterance(the_tablet, Island.say_something(this_isle)) }
+speak_btn.onclick = proclame
+
+function list_islands(isls, my_isle) {
+    erase(islands_list)
+    isls.forEach((isl) => {
+        isl_declaration = my_isle == isl ? `I am ${my_isle}` : isl
+        add_utterance(islands_list, isl_declaration)
+    })
+}
+
+console.log('Whispers.')
+const super_secret = String(Math.random()).substring(2)
+const my_isle_id = `island${super_secret}`
+console.log(`I am ${my_isle_id}`)
+const navigator_port = 3000
+let islands_known = new Set([my_isle_id])
+let routes_known = new Map()
+
+const socket = io()
+
+socket.on('islands', function(isls) {
+    islands_known = new Set(isls)
+    list_islands(islands_known, my_isle_id)
+    update_routes(islands_known, routes_known)
+})
+
+const navigator = new Peer(my_isle_id, {
+    host: 'localhost',
+    port: navigator_port,
+    path: '/navigator'
+})
+
+function connection_logic(conn) {
+    conn.on('open', function() {
+        islands_known.add(conn.peer)
+        routes_known.set(conn.peer, conn)
+        // console.log(routes_known)
+        console.log("Connected to", conn.peer)
+
+        conn.on('data', function(data) {
+            console.log("Received", data)
+            add_utterance(the_tablet, data)
+        })
+    })
+}
+
+navigator.on('connection', function (conn) {
+    connection_logic(conn)
+})
+
+function update_routes(isles, routes) {
+    isles.forEach((isl) => {
+        if(isl != my_isle_id && !routes.has(isl)) {
+            const conn = navigator.connect(isl)
+            routes.set(isl, conn); 
+            connection_logic(conn);
+        }
+    });
+    const lost_routes = set_diff(new Set([...routes.keys()]), isles)
+    lost_routes.forEach((isl) => {
+        routes.get(isl).close()
+        routes.delete(isl)
+    });
+    console.log(routes_known)
+}
+
+function proclame() {
+    const proclamation = Island.say_something(this_isle)
+    add_utterance(the_tablet, proclamation)
+    routes_known.forEach((route, isl) => {
+        // console.log(route, isl)
+        route.send(proclamation)
+    })
+}

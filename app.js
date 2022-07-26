@@ -15,8 +15,9 @@ app.get('/', (_req, res, _next) => {
     res.render('index', {title: 'A Port', message: 'Welcome, friend! You may rest here'})
 })
 
-io.on('connection', (socket) => {
+io.on('connection', (_socket) => {
     console.log('a user connected')
+    io.sockets.emit('islands', Array.from(islands_known))
 })
 
 server.listen(port, () => {
@@ -36,8 +37,6 @@ navigator.on('connection', function (client)
 {
     islands_known.add(client.id);
     console.log(`A route to island ${client.id} found`)
-    io.sockets.emit('islands', Array.from(islands_known))
-    console.log(islands_known)
 })
 
 navigator.on('disconnect', function (client)
@@ -45,5 +44,5 @@ navigator.on('disconnect', function (client)
     islands_known.delete(client.id);
     console.log(`Island ${client.id} lost`)
     io.sockets.emit('islands', Array.from(islands_known))
-    console.log(islands_known)
+    // console.log(islands_known)
 })

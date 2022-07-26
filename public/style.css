@@ -47,7 +47,7 @@ table {
 .tablet {
     display: grid;
 	grid-gap: 20px;
-	grid-template-columns: 600px;
+	grid-template-columns: 480px;
 }
 .cell {
     background-color: #888;
