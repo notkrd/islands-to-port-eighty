@@ -15,21 +15,23 @@ class Island {
     lexicon = new Map(); // Map from phrases to categories they belong to
     
     static init_ontology = new Map([
-        ["object", new Set()],
+        ["entity", new Set()],
         ["relation", new Set()],
         ["attribute", new Set()],
         ["action", new Set()],
-        ["place", new Set(["object"])],
-        ["animal", new Set(["object"])],
-        ["plant", new Set(["object"])],
-        ["person", new Set(["object"])],
-        ["food", new Set(["object"])],
-        ["structure", new Set(["object"])],
-        ["gift", new Set(["action"])],
+        ["time", new Set()],
+        ["event", new Set(["time"])],
+        ["place", new Set(["entity"])],
+        ["animal", new Set(["entity"])],
+        ["plant", new Set(["entity"])],
+        ["person", new Set(["entity"])],
+        ["food", new Set(["entity"])],
+        ["structure", new Set(["entity"])],
+        ["gift", new Set(["relation"])],
         ["attack", new Set(["action"])],
         ["travel", new Set(["action"])],
         ["quantity", new Set(["attribute"])],
-        ["organization", new Set(["object"])]
+        ["organization", new Set(["entity"])]
     ]); // The ontology is a genealogical map from categories to the other categories they they instance. Beware circularity?
     
     static propogate_ontology(ont) {
@@ -43,7 +45,7 @@ class Island {
                 : known_ancestors.add(cat)
             }
             else {
-                return new Set()
+                return known_ancestors.add(cat)
             }
         }
         
@@ -52,11 +54,14 @@ class Island {
     
     static elaborate(ont, lex) {
         lex.forEach((cats, word) => {
-            cats.forEach((supers, cat) => {
+
+            let new_cats = cats
+            cats.forEach((cat) => {
                 if (ont.has(cat)) {
-                    lex.set(word, union(cats, supers))
+                    new_cats = union(new_cats, ont.get(cat))
                 }
             });
+            lex.set(word, new_cats)
         });
     }
 
@@ -87,11 +92,11 @@ const new_paxos = new Island("Paxos (Unreal Ionia)",
         ["the", "olive", "tax", "is", "9", "drachmas", "per", "ton"]
     ]),
     new Map([
-        ["building", new Set(["structure"])],
+        ["building", new Set(["structure", "place"])],
         ["legality", new Set (["attribute"])],
         ["obligation", new Set (["relation"])],
         ["number", new Set (["attribute"])],
-        ["right", new Set (["institution"])],
+        ["right", new Set (["relation"])],
     ]),
     new Map([
         [["olive"], new Set(["food", "plant"])],
@@ -100,7 +105,10 @@ const new_paxos = new Island("Paxos (Unreal Ionia)",
         [["is","guaranteed"], new Set (["legality"])],
         [["painting"], new Set (["action"])],
         [["temple","walls"], new Set (["building"])],
-        [["freedom","of", "artistic", "expression"], new Set (["building"])],
+        [["freedom","of", "artistic", "expression"], new Set (["right"])],
+        [["9"], new Set (["number"])],
+        [["brown", "goats"], new Set (["animal"])],
+        [["sale"], new Set (["gift"])],
     ])
 )
 
@@ -112,13 +120,38 @@ new Set([
     ["year", "3", "of", "his", "reign", "in", "the", "month", "of", "Kirani", "on", "the", "day", "of", "the", "deity's", "burial"],
     ["and", "as", "for", "the", "years", "of", "the", "deity's", "statue", "in", "her", "temple", "these", "may", "be", "so", "many", "years", "as", "the", "stars"]
 ]),
-new Map([]),
-new Map([])
+new Map([
+    ["title", new Set(["attribute"])],
+    ["name", new Set(["attribute"])],
+    ["monument", new Set(["structure", "place"])],
+    ["number", new Set (["attribute"])],
+    ["occasion", new Set (["time", "event"])],
+    ["deity", new Set (["entity"])],
+    ["period", new Set (["time", "duration"])],
+    ["cosmology", new Set (["entity"])]
+]),
+new Map([
+    [["lady"], new Set(["title"])],
+    [["monarch"], new Set(["title"])],
+    [["year"], new Set(["period"])],
+    [["month"], new Set(["period"])],
+    [["day"], new Set(["period"])],
+    [["Astarte"], new Set(["deity"])],
+    [["of", "solar", "sacrifice"], new Set(["occasion"])],
+    [["Kirani"], new Set(["occasion"])],
+    [["the", "deity's", "statue"], new Set(["occasion"])],
+    [["his", "reign"], new Set(["occasion"])],
+    [["the", "deity's", "burial"], new Set(["occasion"])],
+    [["temple"], new Set(["monument"])],
+    [["statue"], new Set(["monument"])],
+    [["aedicule"], new Set(["monument"])],
+    [["the stars"], new Set(["cosmological"])],
+])
 )
 
 my_globe = {
-    "new_paxos": new_paxos,
-    "pyrgi": pyrgi
+    "pyrgi": pyrgi,
+    "new_paxos": new_paxos
 }
 
 function add_utterance(tablet, glyphs) {
@@ -126,7 +159,7 @@ function add_utterance(tablet, glyphs) {
     cell.setAttribute("class", "cell")
     const inscrit = document.createElement("p")
     inscrit.setAttribute("class", "glyphs")
-    inscrit.innerText = glyphs
+    inscrit.innerText = glyphs.toUpperCase()
     cell.appendChild(inscrit)
     tablet.appendChild(cell)
 }
@@ -146,18 +179,7 @@ Object.entries(my_globe).forEach(([isle_key, isle_val]) =>
     port_select.appendChild(isle_option)
 })
 
-this_isle = new_paxos
-port_select.addEventListener("change", function(){ this_isle=my_globe[port_select.value] })
-const the_tablet = document.getElementById("thetablet")
-const islands_list = document.getElementById("islandslist")
 
-last_tried = 0
-prev_bal = 0
-next_bal = 0
-curr_status = "IDLE"
-prev_votes = new Set()
-
-speak_btn.onclick = proclame
 
 function list_islands(isls, my_isle) {
     erase(islands_list)
@@ -167,6 +189,34 @@ function list_islands(isls, my_isle) {
     })
 }
 
+function list_words(a_world) {
+    erase(dictionary)
+    const word_str = 
+        (cats, phrase) => phrase.join(" ").toUpperCase() + ": " + Array.from(cats).join(", ")
+    a_world.lexicon.forEach((cats, phrase) => {
+        add_utterance(dictionary, word_str(cats, phrase))
+    })
+}
+
+this_isle = pyrgi
+const the_tablet = document.getElementById("thetablet")
+const islands_list = document.getElementById("islandslist")
+const dictionary = document.getElementById("dictionary")
+
+function update_island() {
+    this_isle=my_globe[port_select.value]
+    list_words(this_isle)
+}
+
+port_select.addEventListener("change", update_island)
+list_words(this_isle)
+last_tried = 0
+prev_bal = 0
+next_bal = 0
+curr_status = "IDLE"
+prev_votes = new Set()
+
+speak_btn.onclick = proclame
 console.log('Whispers.')
 const super_secret = String(Math.random()).substring(2)
 const my_isle_id = `island${super_secret}`
@@ -194,7 +244,7 @@ function connection_logic(conn) {
         islands_known.add(conn.peer)
         routes_known.set(conn.peer, conn)
         // console.log(routes_known)
-        console.log("Connected to", conn.peer)
+        console.log("Route found to", conn.peer)
 
         conn.on('data', function(data) {
             console.log("Received", data)
@@ -218,6 +268,7 @@ function update_routes(isles, routes) {
     const lost_routes = set_diff(new Set([...routes.keys()]), isles)
     lost_routes.forEach((isl) => {
         routes.get(isl).close()
+        console.log(`Route to ${isl} lost`)
         routes.delete(isl)
     });
     console.log(routes_known)
@@ -225,7 +276,7 @@ function update_routes(isles, routes) {
 
 function proclame() {
     const proclamation = Island.say_something(this_isle)
-    add_utterance(the_tablet, proclamation)
+    add_utterance(the_tablet, proclamation.toUpperCase())
     routes_known.forEach((route, isl) => {
         // console.log(route, isl)
         route.send(proclamation)
