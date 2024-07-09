@@ -20,18 +20,20 @@ class Island {
         ["attribute", new Set()],
         ["action", new Set()],
         ["time", new Set()],
+        ["agent", new Set(["entity"])],
+        ["patient", new Set(["entity"])],
         ["event", new Set(["time"])],
         ["place", new Set(["entity"])],
-        ["animal", new Set(["entity"])],
+        ["animal", new Set(["agent"])],
         ["plant", new Set(["entity"])],
-        ["person", new Set(["entity"])],
+        ["person", new Set(["agent"])],
         ["food", new Set(["entity"])],
         ["structure", new Set(["entity"])],
         ["gift", new Set(["relation"])],
         ["attack", new Set(["action"])],
         ["travel", new Set(["action"])],
         ["quantity", new Set(["attribute"])],
-        ["organization", new Set(["entity"])]
+        ["organization", new Set(["agent"])]
     ]); // The ontology is a genealogical map from categories to the other categories they they instance. Beware circularity?
     
     static propogate_ontology(ont) {
@@ -96,6 +98,7 @@ const new_paxos = new Island("Paxos (Unreal Ionia)",
         ["legality", new Set (["attribute"])],
         ["obligation", new Set (["relation"])],
         ["number", new Set (["attribute"])],
+        ["color", new Set (["attribute"])],
         ["right", new Set (["relation"])],
     ]),
     new Map([
@@ -107,7 +110,9 @@ const new_paxos = new Island("Paxos (Unreal Ionia)",
         [["temple","walls"], new Set (["building"])],
         [["freedom","of", "artistic", "expression"], new Set (["right"])],
         [["9"], new Set (["number"])],
-        [["brown", "goats"], new Set (["animal"])],
+        [["goats"], new Set (["animal"])],
+        [["black"], new Set (["color"])],
+        [["brown"], new Set (["color"])],
         [["sale"], new Set (["gift"])],
     ])
 )
@@ -126,7 +131,7 @@ new Map([
     ["monument", new Set(["structure", "place"])],
     ["number", new Set (["attribute"])],
     ["occasion", new Set (["time", "event"])],
-    ["deity", new Set (["entity"])],
+    ["deity", new Set (["agent"])],
     ["period", new Set (["time", "duration"])],
     ["cosmology", new Set (["entity"])]
 ]),
@@ -136,6 +141,9 @@ new Map([
     [["year"], new Set(["period"])],
     [["month"], new Set(["period"])],
     [["day"], new Set(["period"])],
+    [["Astarte"], new Set(["deity"])],
+    [["Thefarie", "Velianas"], new Set(["person"])],
+    [["Caere"], new Set(["place"])],
     [["Astarte"], new Set(["deity"])],
     [["of", "solar", "sacrifice"], new Set(["occasion"])],
     [["Kirani"], new Set(["occasion"])],
