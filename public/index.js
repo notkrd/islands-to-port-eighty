@@ -6,8 +6,12 @@ const intersection = (a, b) => [...a].reduce(
 const set_diff  = (a, b) => [...a].reduce(
     (i, elem) => !b.has(elem) ? i.add(elem) : i, 
     new Set())    
-const rand_element = (word_set) => [...word_set][Math.floor(Math.random()*word_set.size)]// random element from a non-empty set
+const rand_element = (word_set) => [...word_set][Math.floor(Math.random()*word_set.size)] // random element from a non-empty set
 const PLACEHOLDER = "[...]"
+let last_val = 0
+let proposal_val = 0
+let votes_received = new Set();
+curr_proposal={}
 class Island {
     name;
     utterances = new Set();
@@ -175,6 +179,11 @@ function erase(tablet) {
     tablet.innerHTML = ""
 }
     
+function set_utterance(tablet, glyphs) {
+    erase(tablet)
+    add_utterance(tablet, glyphs)
+}
+
 const speak_btn = document.getElementById("speakbtn")
 const port_select = document.getElementById("portselect")
 
@@ -208,6 +217,8 @@ function list_words(a_world) {
 
 this_isle = pyrgi
 const the_tablet = document.getElementById("thetablet")
+const the_incoming = document.getElementById("incoming")
+const the_private = document.getElementById("private")
 const islands_list = document.getElementById("islandslist")
 const dictionary = document.getElementById("dictionary")
 
@@ -218,12 +229,6 @@ function update_island() {
 
 port_select.addEventListener("change", update_island)
 list_words(this_isle)
-last_tried = 0
-prev_bal = 0
-next_bal = 0
-curr_status = "IDLE"
-prev_votes = new Set()
-
 speak_btn.onclick = proclame
 console.log('Whispers.')
 const super_secret = String(Math.random()).substring(2)
@@ -256,7 +261,9 @@ function connection_logic(conn) {
 
         conn.on('data', function(data) {
             console.log("Received", data)
-            add_utterance(the_tablet, data)
+            if(data['kind']=="PROCLAMATION") {
+                add_utterance(the_tablet, data['proposal']['utterance'])
+            }
         })
     })
 }
@@ -282,11 +289,22 @@ function update_routes(isles, routes) {
     console.log(routes_known)
 }
 
+
+
+function start_round() {
+    proposal_val = last_val + Math.ceil(Math.random()*1000)
+    console.log("VAL: ", proposal_val)
+    curr_proposal = {'utterance': Island.say_something(this_isle)}
+    set_utterance(the_private, curr_proposal['utterance'])
+    votes_received = new Set();
+}
+
 function proclame() {
-    const proclamation = Island.say_something(this_isle)
-    add_utterance(the_tablet, proclamation.toUpperCase())
-    routes_known.forEach((route, isl) => {
+    add_utterance(the_tablet, curr_proposal['utterance'].toUpperCase())
+    routes_known.forEach((route, _isl) => {
         // console.log(route, isl)
-        route.send(proclamation)
+        route.send({"kind": "PROCLAMATION", "value": proposal_val, "proposal": curr_proposal})
     })
 }
+
+start_round()
