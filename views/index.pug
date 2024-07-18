@@ -10,15 +10,19 @@ html(lang="en/ca")
     body
         label(for="portselect", class="selectlabel")= "Pick your port"
         select(name="ports", id="portselect", class="dropdown")
+        h1(class="heading")= "A record"
+        p(class="status" id="consensus")= "Awaiting Message"
+        div(class="tablet", id="thetablet")
         h1(class="heading")= "A message arriving"
         div(class="tablet", id="incoming")
-        button(class="proposal", type="button", id="acceptbtn")= "Accept message."
-        button(class="proposal", type="button", id="rejectbtn")= "Reject message."
-        h1(class="heading")= "A private reflection"
+        button(class="proposal", type="button", id="acknowledgebtn")= "Acknowledge message."
+        button(class="proposal", type="button", id="rejectbtn")= "Ignore message."
+        p(class="status" id="msgstatus")= "Awaiting Message"
+        h1(class="heading")= "A local suggestion"
         div(class="tablet", id="private")
         button(class="proposal", type="button", id="speakbtn")= "Proclame."
-        h1(class="heading")= "A record"
-        div(class="tablet", id="thetablet")
+        button(class="proposal", type="button", id="refreshbtn")= "Think of something else."
+        p(class="status" id="procstatus")= "Proclamation proclamed"
         h1(class="heading")= "Words Known"
         div(class="tablet", id="dictionary")
         h1(class="heading")= "Ports Known"

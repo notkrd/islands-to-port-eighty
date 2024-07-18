@@ -6,17 +6,33 @@ const intersection = (a, b) => [...a].reduce(
 const set_diff  = (a, b) => [...a].reduce(
     (i, elem) => !b.has(elem) ? i.add(elem) : i, 
     new Set())    
-const rand_element = (word_set) => [...word_set][Math.floor(Math.random()*word_set.size)] // random element from a non-empty set
+const rand_element = (word_set) => [...word_set][Math.floor(Math.random()*[...word_set].length)] // random element from a non-empty set
 const PLACEHOLDER = "[...]"
-let last_val = 0
-let proposal_val = 0
-let votes_received = new Set();
+let last_identifier = 0
+let prop_identifier = 0
+let prop_value = 0
+let proposals_rejected = new Set()
+let promises_received = new Set()
+let accepts_received = new Map()
+curr_proclamation={}
 curr_proposal={}
+let proposals_accepted = new Set()
+
+const the_tablet = document.getElementById("thetablet")
+const the_incoming = document.getElementById("incoming")
+const acknowledge_btn = document.getElementById("acknowledgebtn")
+const reject_btn = document.getElementById("rejectbtn")
+const msg_status = document.getElementById("msgstatus")
+const proc_status = document.getElementById("procstatus")
+const the_private = document.getElementById("private")
+const islands_list = document.getElementById("islandslist")
+const dictionary = document.getElementById("dictionary")
 class Island {
     name;
     utterances = new Set();
     ontology = new Map();
     lexicon = new Map(); // Map from phrases to categories they belong to
+    grammar = [];
     
     static init_ontology = new Map([
         ["entity", new Set()],
@@ -71,23 +87,79 @@ class Island {
         });
     }
 
+    static learn_sentence(sent, the_lexicon, the_grammar) {
+        let annotated = []
+        let remaining = sent
+        while(remaining.length>0){
+            let match_found = false
+            for (const a_phrase of the_lexicon.keys()) {
+                if(JSON.stringify(remaining.slice(0,a_phrase.length)) == JSON.stringify(a_phrase)) {
+                    annotated.push({'kind': "VARIABLE", 'categories': [...the_lexicon.get(a_phrase)]})
+                    remaining = remaining.slice(a_phrase.length)
+                    match_found = true
+                    break
+                }
+            }
+            if(!match_found){
+                annotated.push({'kind': "WORD", 'value': remaining[0]})
+                remaining = remaining.slice(1)
+            }
+        }
+        the_grammar.push(annotated)
+    }
+
+    static make_sentence(isle, the_syntax) {
+        let new_phrases = []
+        const the_sentence = the_syntax.reduce((s, x) => {
+            if (x['kind'] == 'WORD') {
+                return s.concat([x['value']]);
+            }
+            else if (x['kind'] == 'VARIABLE') {
+                let possible_phrases = [...isle.lexicon.keys()].filter((a_phrase) => (new Set(x['categories'])).isSubsetOf(isle.lexicon.get(a_phrase)))
+                if(possible_phrases) {
+                    let new_phrase = rand_element(possible_phrases);
+                    new_phrases.push([new_phrase, [...isle.lexicon.get(new_phrase)]]);
+                    return s.concat(new_phrase);
+                }
+                else {
+                    return s.concat([rand_element(x['categories'])]);
+                }
+
+            }
+        }, new Array())
+        return {'utterance': the_sentence.join(" "), 'phrases': new_phrases, 'pattern': the_syntax}
+    }
+
+    static learn_grammar(isle) {
+        isle.utterances.forEach((u) => this.learn_sentence(u, isle.lexicon, isle.grammar))
+    }
+
     static say_something(isle) {
-        const s = isle.utterances.size > 0 ? rand_element(isle.utterances)
-            : [PLACEHOLDER]
-        return s.join(' ')
+        return Island.make_sentence(isle, rand_element(isle.grammar))
+    }
+
+    static learn_proclamation(isle, proc) {
+        proc['phrases'].forEach((phr) => {if (!isle.lexicon.has(phr[0])) {isle.lexicon.set(phr[0], new Set(phr[1]))}})
+        if (!isle.grammar.includes(proc['pattern'])){
+            isle.grammar.push(proc['pattern'])
+        }
     }
         
-    constructor(name, utterances, ontology, lexicon) {
+    constructor(name, utterances, ontology, lexicon, grammar) {
         this.name = name;
         this.utterances = utterances;
         this.ontology = new Map([...Island.init_ontology, ...ontology]);
         this.lexicon = lexicon;        
+        this.grammar = grammar;
         Island.propogate_ontology(this.ontology);
         Island.elaborate(this.ontology, this.lexicon);
+        console.log(this.lexicon)
+        Island.learn_grammar(this)
     }
 }
 
-const new_paxos = new Island("Paxos (Unreal Ionia)",
+const new_paxos = new Island(
+    "Paxos (Unreal Ionia)",
     new Set([
         ["the", "olive", "tax", "is", "3", "drachmas", "per", "ton"],
         ["lamps", "must", "use", "only", "olive", "oil"],
@@ -118,52 +190,110 @@ const new_paxos = new Island("Paxos (Unreal Ionia)",
         [["black"], new Set (["color"])],
         [["brown"], new Set (["color"])],
         [["sale"], new Set (["gift"])],
-    ])
+    ]),
+    []
 )
 
-const pyrgi = new Island("Pyrgi (Latium)",
-new Set([
-    ["for", "the", "lady", "astarte", "this", "is", "the", "holy", "place"],
-    ["which", "made", "and", "which", "offered", "Thefarie", "Velianas", "king", "over", "Caere", "the", "month", "of", "solar", "sacrifice", "as", "gift", "in", "the", "temple"],
-    ["and", "he", "built", "an", "aedicule", "because", "Astarte", "requested", "it", "from", "him"],
-    ["year", "3", "of", "his", "reign", "in", "the", "month", "of", "Kirani", "on", "the", "day", "of", "the", "deity's", "burial"],
-    ["and", "as", "for", "the", "years", "of", "the", "deity's", "statue", "in", "her", "temple", "these", "may", "be", "so", "many", "years", "as", "the", "stars"]
-]),
-new Map([
-    ["title", new Set(["attribute"])],
-    ["name", new Set(["attribute"])],
-    ["monument", new Set(["structure", "place"])],
-    ["number", new Set (["attribute"])],
-    ["occasion", new Set (["time", "event"])],
-    ["deity", new Set (["agent"])],
-    ["period", new Set (["time", "duration"])],
-    ["cosmology", new Set (["entity"])]
-]),
-new Map([
-    [["lady"], new Set(["title"])],
-    [["monarch"], new Set(["title"])],
-    [["year"], new Set(["period"])],
-    [["month"], new Set(["period"])],
-    [["day"], new Set(["period"])],
-    [["Astarte"], new Set(["deity"])],
-    [["Thefarie", "Velianas"], new Set(["person"])],
-    [["Caere"], new Set(["place"])],
-    [["Astarte"], new Set(["deity"])],
-    [["of", "solar", "sacrifice"], new Set(["occasion"])],
-    [["Kirani"], new Set(["occasion"])],
-    [["the", "deity's", "statue"], new Set(["occasion"])],
-    [["his", "reign"], new Set(["occasion"])],
-    [["the", "deity's", "burial"], new Set(["occasion"])],
-    [["temple"], new Set(["monument"])],
-    [["statue"], new Set(["monument"])],
-    [["aedicule"], new Set(["monument"])],
-    [["the stars"], new Set(["cosmological"])],
-])
+const pyrgi = new Island(
+    "Pyrgi (Latium)",
+    new Set([
+        ["for", "the", "lady", "astarte", "this", "is", "the", "holy", "place"],
+        ["which", "made", "and", "which", "offered", "Thefarie", "Velianas", "king", "over", "Caere", "the", "month", "of", "solar", "sacrifice", "as", "gift", "in", "the", "temple"],
+        ["and", "he", "built", "an", "aedicule", "because", "Astarte", "requested", "it", "from", "him"],
+        ["year", "3", "of", "his", "reign", "in", "the", "month", "of", "Kirani", "on", "the", "day", "of", "the", "deity's", "burial"],
+        ["and", "as", "for", "the", "years", "of", "the", "deity's", "statue", "in", "her", "temple", "these", "may", "be", "so", "many", "years", "as", "the", "stars"]
+    ]),
+    new Map([
+        ["title", new Set(["attribute"])],
+        ["name", new Set(["attribute"])],
+        ["monument", new Set(["structure", "place"])],
+        ["city", new Set(["place"])],
+        ["number", new Set (["attribute"])],
+        ["accolade", new Set (["attribute"])],
+        ["occasion", new Set (["time", "event"])],
+        ["deity", new Set (["agent"])],
+        ["period", new Set (["time", "duration"])],
+        ["cosmology", new Set (["entity"])]
+    ]),
+    new Map([
+        [["lady"], new Set(["title"])],
+        [["monarch"], new Set(["title"])],
+        [["year"], new Set(["period"])],
+        [["years"], new Set(["period"])],
+        [["month"], new Set(["period"])],
+        [["day"], new Set(["period"])],
+        [["three"], new Set (["number"])],
+        [["astarte"], new Set(["deity"])],
+        [["made"], new Set(["action"])],
+        [["offered"], new Set(["action"])],
+        [["Thefarie", "Velianas"], new Set(["person"])],
+        [["caere"], new Set(["city"])],
+        [["of", "solar", "sacrifice"], new Set(["occasion"])],
+        [["Kirani"], new Set(["occasion"])],
+        [["deity's", "statue"], new Set(["monument"])],
+        [["his", "reign"], new Set(["occasion"])],
+        [["deity's", "burial"], new Set(["occasion"])],
+        [["temple"], new Set(["monument"])],
+        [["statue"], new Set(["monument"])],
+        [["aedicule"], new Set(["monument"])],
+        [["stars"], new Set(["cosmological"])],
+        [["holy"], new Set(["accolade"])],
+        [["place"], new Set(["kind"])]
+    ]),
+    []
+    // new Set([
+    //         ["for", "the", "$title", "$deity", "this", "is", "the", "$holy", "$kind"],
+    //         ["which", "$action", "and", "which", "$action", "$person", "$title", "over", "$city", "the", "$period", "$occasion", "as", "gift", "in", "the", "$monument"]
+    //     ])
+)
+
+const naqsh_e_rostam = new Island(
+    "Darius Naqsh-e Rostam (Naqsh-e Rostam)",
+    new Set([
+        "A great god is Ahuramazda, who created this excellent work which is seen, who created happiness for man, who bestowed wisdom and activity upon Darius the King.".toLowerCase().split(" "),
+        "Darius the King says: By the favor of Ahuramazda I am of such a sort that I am a friend to right, I am not a friend to wrong.".split(" "), 
+        "It is not my desire that the weak man should have wrong done to him by the mighty; nor is that my desire, that the mighty man should have wrong done to him by the weak.".toLowerCase().split(" "),
+        "I am not a friend to the man who is a Lie-follower. I am not hot-tempered.".toLowerCase().split(" "),
+        "What things develop in my anger, I hold firmly under control by my thinking power.".toLowerCase().split(" "),
+        "The man who cooperates, him according to his cooperative action, him thus do I reward.".toLowerCase().split(" "),
+        "What a man says against a man, that does not convince me, until he satisfies the Ordinance of Good Regulations.".toLowerCase().split(" ")
+    ]),
+    new Map([
+        ["title", new Set(["attribute"])],
+        ["name", new Set(["attribute"])],
+        ["number", new Set (["attribute"])],
+        ["character", new Set (["attribute"])],
+        ["disposition", new Set (["attribute"])],
+        ["occasion", new Set (["time", "event"])],
+        ["law", new Set (["entity"])],
+        ["valuation", new Set (["entity"])],
+        ["deity", new Set (["agent"])],
+    ]),
+    new Map([
+        [["king"], new Set(["title"])],
+        [["god"], new Set(["title"])],
+        [["ahuramazda"], new Set(["deity"])],
+        [["darius"], new Set(["name"])],
+        [["right"], new Set(["valuation"])],
+        [["wrong"], new Set(["valuation"])],
+        [["weak"], new Set(["character"])],
+        [["mighty"], new Set(["character"])],
+        [["hot-tempered"], new Set(["character"])],
+        [["cooperative", "action"], new Set(["action"])],
+        [["convince"], new Set(["action"])],
+        [["develop"], new Set(["action"])],
+        [["Lie-Follower"], new Set(["disposition"])],
+        [["friend", "to", "right"], new Set(["disposition"])],
+        [["friend", "to", "wrong"], new Set(["disposition"])],
+        [["man", "who", "cooperates"], new Set(["disposition"])]
+    ]),
+    []
 )
 
 my_globe = {
     "pyrgi": pyrgi,
-    "new_paxos": new_paxos
+    "new_paxos": new_paxos,
+    "naqsh_e_rostam": naqsh_e_rostam
 }
 
 function add_utterance(tablet, glyphs) {
@@ -185,6 +315,7 @@ function set_utterance(tablet, glyphs) {
 }
 
 const speak_btn = document.getElementById("speakbtn")
+const refresh_btn = document.getElementById("refreshbtn")
 const port_select = document.getElementById("portselect")
 
 Object.entries(my_globe).forEach(([isle_key, isle_val]) =>
@@ -195,8 +326,6 @@ Object.entries(my_globe).forEach(([isle_key, isle_val]) =>
     isle_option.appendChild(isle_text)
     port_select.appendChild(isle_option)
 })
-
-
 
 function list_islands(isls, my_isle) {
     erase(islands_list)
@@ -215,21 +344,23 @@ function list_words(a_world) {
     })
 }
 
-this_isle = pyrgi
-const the_tablet = document.getElementById("thetablet")
-const the_incoming = document.getElementById("incoming")
-const the_private = document.getElementById("private")
-const islands_list = document.getElementById("islandslist")
-const dictionary = document.getElementById("dictionary")
-
 function update_island() {
     this_isle=my_globe[port_select.value]
     list_words(this_isle)
+    set_utterance(the_tablet, "")
+    refresh_statement()
 }
 
 port_select.addEventListener("change", update_island)
+let rand_isle_name = rand_element(Object.keys(my_globe))
+port_select.value = rand_isle_name
+this_isle = my_globe[rand_isle_name]
+
 list_words(this_isle)
 speak_btn.onclick = proclame
+refresh_btn.onclick = refresh_statement
+acknowledge_btn.onclick = acknowledge_proposal
+reject_btn.onclick = reject_proposal
 console.log('Whispers.')
 const super_secret = String(Math.random()).substring(2)
 const my_isle_id = `island${super_secret}`
@@ -252,6 +383,70 @@ const navigator = new Peer(my_isle_id, {
     path: '/navigator'
 })
 
+function receive_proposal(a_prop) {
+    curr_proposal = a_prop
+    set_utterance(the_incoming, curr_proposal['proclamation']['utterance'])
+    acknowledge_btn.style.display = "inline"
+    reject_btn.style.display = "inline"
+    msg_status.style.display= "none"
+}
+
+function confirm_proclamation(data) {
+    console.log(`Your proclamation "${data['proclamation']['utterance']}" has been acknowledged and will now be proposed`)
+    routes_known.forEach((route, _isl) => {
+        // console.log(route, isl)
+        route.send({"kind": "ACCEPT?", "identifier": data['identifier'], "proclamation": data['proclamation'], "source": my_isle_id})
+        start_round()
+    })
+}
+
+function do_we_accept_proclamation(data){
+    if(data['identifier'] >= last_identifier) {
+        add_to_accepted(data['identifier'], my_isle_id)
+        routes_known.forEach((route, _isl) => {
+            // console.log(route, isl)
+            route.send({"kind": "ACCEPTED", "identifier": data['identifier'], "value": data['value'], "proclamation": data["proclamation"], "source": my_isle_id})
+        })
+    }
+}
+
+function add_to_accepted(the_identifier, the_id){
+    if(accepts_received.has(the_identifier)){
+        accepts_received.get(the_identifier).add(the_id)
+    }
+    else {
+        accepts_received.set(the_identifier, new Set([the_id]))
+    }
+}
+
+function accepted_proclamation(data) {
+    add_to_accepted(data['identifier'], data['source'])
+    if(accepts_received.get(data['identifier']).size > (islands_known.size / 2)) {
+        implement_proclamation(data)
+    }
+}
+
+function implement_proclamation(data) {
+    if(!proposals_accepted.has(data['identifier'])){
+        proposals_accepted.add(data['identifier'])
+        add_utterance(the_tablet, data['proclamation']['utterance'])
+        last_identifier = data['identifier']
+        Island.learn_proclamation(this_isle, data['proclamation'])
+        list_words(this_isle)
+        console.log(`Proclamation "${data['proclamation']['utterance']}" has been elevated to consensus`)
+        start_round()
+    }
+}
+
+function receive_promise(data) {
+    promises_received.add(data['source'])
+    proc_status.innerText= `Proclamation proclamed. Acknowledgements received: ${promises_received.size}`
+    if(promises_received.size > islands_known.size/2) {
+        confirm_proclamation(data)
+    }
+    prop_value = Math.max(prop_value, data['last_value'])
+}
+
 function connection_logic(conn) {
     conn.on('open', function() {
         islands_known.add(conn.peer)
@@ -261,11 +456,37 @@ function connection_logic(conn) {
 
         conn.on('data', function(data) {
             console.log("Received", data)
-            if(data['kind']=="PROCLAMATION") {
-                add_utterance(the_tablet, data['proposal']['utterance'])
+            if(data['kind']=="PREPARE") {
+                if(data['identifier'] > last_identifier) {
+                    receive_proposal(data)
+                }
+            }
+            if(data['kind']=="PROMISE") {
+                receive_promise(data)
+            }
+            if(data['kind']=="ACCEPT?") {
+                do_we_accept_proclamation(data)
+            }
+            if(data['kind']=="ACCEPTED") {
+                accepted_proclamation(data)
             }
         })
     })
+}
+
+function acknowledge_proposal() {
+    [acknowledge_btn, reject_btn].forEach((btn) => btn.style.display = "none")
+    msg_status.innerText= `Proclamation acknowledged. Awaiting majority or more compelling message.`
+    routes_known.get(curr_proposal['source']).send({'kind': "PROMISE", 'identifier': curr_proposal['identifier'], 'proclamation': curr_proposal['proclamation'], 'last_value': prop_value, "source": my_isle_id})
+    msg_status.style.display= "block"
+    last_identifier = curr_proposal['identifier']
+    console.log("New Proposal Identifier: ", last_identifier)
+}
+function reject_proposal() {
+    proposals_rejected.add(curr_proposal['identifier']);
+    [acknowledge_btn, reject_btn].forEach((btn) => btn.style.display = "none")
+    msg_status.innerText= `Proclamation ignored. Awaiting more compelling message.`
+    msg_status.style.display= "block"
 }
 
 navigator.on('connection', function (conn) {
@@ -289,22 +510,38 @@ function update_routes(isles, routes) {
     console.log(routes_known)
 }
 
-
-
-function start_round() {
-    proposal_val = last_val + Math.ceil(Math.random()*1000)
-    console.log("VAL: ", proposal_val)
-    curr_proposal = {'utterance': Island.say_something(this_isle)}
-    set_utterance(the_private, curr_proposal['utterance'])
-    votes_received = new Set();
-}
-
 function proclame() {
-    add_utterance(the_tablet, curr_proposal['utterance'].toUpperCase())
+    speak_btn.style.display= "none"
+    refresh_btn.style.display= "none"
+    proc_status.style.display= "block"
+    promises_received.add(my_isle_id)
+    proc_status.innerText= `Proclamation proclamed. Acceptances received: only your own`
     routes_known.forEach((route, _isl) => {
         // console.log(route, isl)
-        route.send({"kind": "PROCLAMATION", "value": proposal_val, "proposal": curr_proposal})
+        route.send({"kind": "PREPARE", "identifier": prop_identifier, "proclamation": curr_proclamation, "source": my_isle_id})
     })
 }
 
+function refresh_statement() {
+    curr_proclamation = Island.say_something(this_isle)
+    set_utterance(the_private, curr_proclamation['utterance'])
+}
+
+function start_round() {
+    proposals_rejected = 0
+    prop_identifier = last_identifier + Math.ceil(Math.random()*1000)
+    console.log("VAL: ", prop_identifier)
+    curr_proclamation = Island.say_something(this_isle)
+    set_utterance(the_private, curr_proclamation['utterance'])
+    set_utterance(the_incoming, "")
+    promises_received = new Set();
+    [acknowledge_btn, reject_btn].forEach((btn) => btn.style.display = "none")
+    speak_btn.style.display= "inline"
+    refresh_btn.style.display= "inline"
+    msg_status.style.display= "block"
+    msg_status.innerText= "Awaiting message"
+    proc_status.style.display= "none"
+}
+
+update_island()
 start_round()

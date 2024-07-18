@@ -45,21 +45,24 @@ table {
 }
 /* Islands stuff */
 .tablet {
-    display: grid;
-	grid-gap: 20px;
-	grid-template-columns: 480px;
     background-color: #888;
     color: #fff;
     padding: 20px;
     border-radius: 10px;
 }
 .cell {
-    border-radius: 10px;
     font-size: 150%;
+	padding: 1vh;
 }
 .heading {
 	font-size: 200%;
 	padding: 20px;
+}
+.status {
+	font-size: 150%;
+	font-style: italic;
+	padding: 20px;
+	margin: 40px;
 }
 .proposal {
 	margin: 40px;
