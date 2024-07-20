@@ -5,7 +5,7 @@ const http = require('http')
 const server = http.createServer(app)
 const { Server } = require("socket.io")
 const port = 3000
-const nav_port = 3000
+const nav_port = 9090
 const io = new Server(server)
 
 app.set('view engine', 'pug')
