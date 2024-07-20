@@ -11,8 +11,8 @@ html(lang="en/ca")
         label(for="portselect", class="selectlabel")= "Pick your port"
         select(name="ports", id="portselect", class="dropdown")
         h1(class="heading")= "A record"
-        p(class="status" id="consensus")= "Awaiting Message"
         div(class="tablet", id="thetablet")
+        p(class="status" id="consensusstatus")= "Nothing has been agreed upon."
         h1(class="heading")= "A message arriving"
         div(class="tablet", id="incoming")
         button(class="proposal", type="button", id="acknowledgebtn")= "Acknowledge message."

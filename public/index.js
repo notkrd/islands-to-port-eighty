@@ -24,6 +24,7 @@ const acknowledge_btn = document.getElementById("acknowledgebtn")
 const reject_btn = document.getElementById("rejectbtn")
 const msg_status = document.getElementById("msgstatus")
 const proc_status = document.getElementById("procstatus")
+const cons_status = document.getElementById("consensusstatus")
 const the_private = document.getElementById("private")
 const islands_list = document.getElementById("islandslist")
 const dictionary = document.getElementById("dictionary")
@@ -171,24 +172,30 @@ const new_paxos = new Island(
     ]),
     new Map([
         ["building", new Set(["structure", "place"])],
-        ["legality", new Set (["attribute"])],
+        ["valuation", new Set (["attribute"])],
         ["obligation", new Set (["relation"])],
+        ["valuation", new Set (["attribute"])],
         ["number", new Set (["attribute"])],
         ["color", new Set (["attribute"])],
+        ["description", new Set (["attribute"])],
         ["right", new Set (["relation"])],
+        ["plant", new Set (["entity"])],
+        ["currency", new Set (["entity"])]
     ]),
     new Map([
-        [["olive"], new Set(["food", "plant"])],
-        [["must", "use", "only"], new Set (["obligation"])],
-        [["is","forbidden"], new Set (["legality"])],
-        [["is","guaranteed"], new Set (["legality"])],
+        [["olive"], new Set(["plant"])],
+        [["drachmas"], new Set(["currency"])],
+        [["forbidden"], new Set (["valuation"])],
+        [["guaranteed"], new Set (["valuation"])],
         [["painting"], new Set (["action"])],
         [["temple","walls"], new Set (["building"])],
         [["freedom","of", "artistic", "expression"], new Set (["right"])],
+        [["tax"], new Set (["obligation"])],
         [["9"], new Set (["number"])],
+        [["3"], new Set (["number"])],
         [["goats"], new Set (["animal"])],
-        [["black"], new Set (["color"])],
-        [["brown"], new Set (["color"])],
+        [["black"], new Set (["description"])],
+        [["brown"], new Set (["description"])],
         [["sale"], new Set (["gift"])],
     ]),
     []
@@ -198,9 +205,9 @@ const pyrgi = new Island(
     "Pyrgi (Latium)",
     new Set([
         ["for", "the", "lady", "astarte", "this", "is", "the", "holy", "place"],
-        ["which", "made", "and", "which", "offered", "Thefarie", "Velianas", "king", "over", "Caere", "the", "month", "of", "solar", "sacrifice", "as", "gift", "in", "the", "temple"],
-        ["and", "he", "built", "an", "aedicule", "because", "Astarte", "requested", "it", "from", "him"],
-        ["year", "3", "of", "his", "reign", "in", "the", "month", "of", "Kirani", "on", "the", "day", "of", "the", "deity's", "burial"],
+        ["which", "made", "and", "which", "offered", "thefarie", "velianas", "king", "over", "Caere", "the", "month", "of", "solar", "sacrifice", "as", "gift", "in", "the", "temple"],
+        ["and", "he", "built", "an", "aedicule", "because", "astarte", "requested", "it", "from", "him"],
+        ["year", "3", "of", "his", "reign", "in", "the", "month", "of", "kirani", "on", "the", "day", "of", "the", "deity's", "burial"],
         ["and", "as", "for", "the", "years", "of", "the", "deity's", "statue", "in", "her", "temple", "these", "may", "be", "so", "many", "years", "as", "the", "stars"]
     ]),
     new Map([
@@ -209,7 +216,7 @@ const pyrgi = new Island(
         ["monument", new Set(["structure", "place"])],
         ["city", new Set(["place"])],
         ["number", new Set (["attribute"])],
-        ["accolade", new Set (["attribute"])],
+        ["description", new Set (["attribute"])],
         ["occasion", new Set (["time", "event"])],
         ["deity", new Set (["agent"])],
         ["period", new Set (["time", "duration"])],
@@ -219,7 +226,6 @@ const pyrgi = new Island(
         [["lady"], new Set(["title"])],
         [["monarch"], new Set(["title"])],
         [["year"], new Set(["period"])],
-        [["years"], new Set(["period"])],
         [["month"], new Set(["period"])],
         [["day"], new Set(["period"])],
         [["three"], new Set (["number"])],
@@ -229,15 +235,14 @@ const pyrgi = new Island(
         [["Thefarie", "Velianas"], new Set(["person"])],
         [["caere"], new Set(["city"])],
         [["of", "solar", "sacrifice"], new Set(["occasion"])],
-        [["Kirani"], new Set(["occasion"])],
-        [["deity's", "statue"], new Set(["monument"])],
+        [["kirani"], new Set(["occasion"])],
         [["his", "reign"], new Set(["occasion"])],
-        [["deity's", "burial"], new Set(["occasion"])],
+        [["the", "deity's", "burial"], new Set(["occasion"])],
         [["temple"], new Set(["monument"])],
         [["statue"], new Set(["monument"])],
         [["aedicule"], new Set(["monument"])],
         [["stars"], new Set(["cosmological"])],
-        [["holy"], new Set(["accolade"])],
+        [["holy"], new Set(["description"])],
         [["place"], new Set(["kind"])]
     ]),
     []
@@ -248,10 +253,10 @@ const pyrgi = new Island(
 )
 
 const naqsh_e_rostam = new Island(
-    "Darius Naqsh-e Rostam (Naqsh-e Rostam)",
+    "Darius Naqsh-e Rostam (Achaemenid)",
     new Set([
         "A great god is Ahuramazda, who created this excellent work which is seen, who created happiness for man, who bestowed wisdom and activity upon Darius the King.".toLowerCase().split(" "),
-        "Darius the King says: By the favor of Ahuramazda I am of such a sort that I am a friend to right, I am not a friend to wrong.".split(" "), 
+        "Darius the King says: By the favor of Ahuramazda I am of such a sort that I am a friend to right, I am not a friend to wrong.".toLowerCase().split(" "), 
         "It is not my desire that the weak man should have wrong done to him by the mighty; nor is that my desire, that the mighty man should have wrong done to him by the weak.".toLowerCase().split(" "),
         "I am not a friend to the man who is a Lie-follower. I am not hot-tempered.".toLowerCase().split(" "),
         "What things develop in my anger, I hold firmly under control by my thinking power.".toLowerCase().split(" "),
@@ -264,9 +269,11 @@ const naqsh_e_rostam = new Island(
         ["number", new Set (["attribute"])],
         ["character", new Set (["attribute"])],
         ["disposition", new Set (["attribute"])],
+        ["description", new Set (["attribute"])],
         ["occasion", new Set (["time", "event"])],
         ["law", new Set (["entity"])],
         ["valuation", new Set (["entity"])],
+        ["capacity", new Set (["entity"])],
         ["deity", new Set (["agent"])],
     ]),
     new Map([
@@ -274,15 +281,20 @@ const naqsh_e_rostam = new Island(
         [["god"], new Set(["title"])],
         [["ahuramazda"], new Set(["deity"])],
         [["darius"], new Set(["name"])],
-        [["right"], new Set(["valuation"])],
-        [["wrong"], new Set(["valuation"])],
+        [["right"], new Set(["description"])],
+        [["wrong"], new Set(["description"])],
         [["weak"], new Set(["character"])],
         [["mighty"], new Set(["character"])],
         [["hot-tempered"], new Set(["character"])],
         [["cooperative", "action"], new Set(["action"])],
         [["convince"], new Set(["action"])],
         [["develop"], new Set(["action"])],
-        [["Lie-Follower"], new Set(["disposition"])],
+        [["thinking", "power"], new Set(["capacity"])],
+        [["anger"], new Set(["capacity"])],
+        [["wisdom"], new Set(["capacity"])],
+        [["happiness"], new Set(["capacity"])],
+        [["activity"], new Set(["capacity"])],
+        [["lie-Follower"], new Set(["disposition"])],
         [["friend", "to", "right"], new Set(["disposition"])],
         [["friend", "to", "wrong"], new Set(["disposition"])],
         [["man", "who", "cooperates"], new Set(["disposition"])]
@@ -290,10 +302,70 @@ const naqsh_e_rostam = new Island(
     []
 )
 
+const ea_nasir = new Island(
+    "Ea Nasir (Ur)",
+    new Set([
+        "When you came, you said to me as follows: ‘I will give Gimil-Sin (when he comes) fine quality copper ingots.’".toLowerCase().split(" "),
+        "You put ingots which were not good before my messenger Sit-Sin".toLowerCase().split(" "), 
+        "If you want to take them, take them; if you do not want to take them, go away’".toLowerCase().split(" "),
+        "What do you take me for, that you treat somebody like me with such contempt?".toLowerCase().split(" "),
+        "On account of that one mina of silver which I owe you, you feel free to speak in such a way, while I have given to the palace on your behalf 1,080 pounds of copper".toLowerCase().split(" ")
+    ]),
+    new Map([
+        ["currency", new Set (["entity"])],
+        ["metal", new Set (["entity"])],
+        ["name", new Set (["attribute"])],
+        ["description", new Set (["attribute"])],
+        ["profession", new Set (["attribute"])]
+]),
+    new Map([
+        [["ingots"], new Set(["currency"])],
+        [["mina"], new Set(["currency"])],
+        [["copper"], new Set(["metal"])],
+        [["silver"], new Set(["metal"])],
+        [["gimil-sin"], new Set(["name"])],
+        [["sit-sin"], new Set(["name"])],
+        [["take", "them"], new Set(["action"])],
+        [["go", "away"], new Set(["action"])],
+        [["fine", "quality"], new Set(["description"])],
+        [["not", "good"], new Set(["description"])],
+        [["messenger"], new Set(["profession"])]
+    ]),
+    []
+)
+
+const chamalieres = new Island(
+    "Chamalières (Gaul)",
+    new Set([
+        "In the name of the good strength of the underworld gods, I invoke Maponos of Arverion".toLowerCase().split(" "),
+        "Pursue… those with the magic of the infernals".toLowerCase().split(" "),
+        "If it is reduced it is full - I straighten what is crooked".toLowerCase().split(" "),
+        "I see blind … place to my right place to my right place to my right".toLowerCase().split(" ")
+    ]),
+    new Map([
+        ["title", new Set(["attribute"])],
+        ["place", new Set(["entity"])],
+        ["number", new Set (["attribute"])],
+        ["character", new Set (["attribute"])],
+        ["disposition", new Set (["attribute"])],
+        ["description", new Set (["attribute"])],
+        ["occasion", new Set (["time", "event"])],
+        ["law", new Set (["entity"])],
+        ["valuation", new Set (["entity"])],
+        ["capacity", new Set (["entity"])],
+        ["deity", new Set (["agent"])],
+    ]),
+    new Map([
+
+    ]),
+    []
+)
+
 my_globe = {
     "pyrgi": pyrgi,
     "new_paxos": new_paxos,
-    "naqsh_e_rostam": naqsh_e_rostam
+    "naqsh_e_rostam": naqsh_e_rostam,
+    "ea_nasir": ea_nasir
 }
 
 function add_utterance(tablet, glyphs) {
@@ -429,11 +501,11 @@ function accepted_proclamation(data) {
 function implement_proclamation(data) {
     if(!proposals_accepted.has(data['identifier'])){
         proposals_accepted.add(data['identifier'])
-        add_utterance(the_tablet, data['proclamation']['utterance'])
+        add_utterance(the_tablet, Island.say_something(this_isle)['utterance'])
         last_identifier = data['identifier']
         Island.learn_proclamation(this_isle, data['proclamation'])
         list_words(this_isle)
-        console.log(`Proclamation "${data['proclamation']['utterance']}" has been elevated to consensus`)
+        cons_status.innerText = `Proclamation "${data['proclamation']['utterance']}" has been elevated to consensus`
         start_round()
     }
 }
@@ -469,6 +541,9 @@ function connection_logic(conn) {
             }
             if(data['kind']=="ACCEPTED") {
                 accepted_proclamation(data)
+            }
+            if(data['kind']=="RESET") {
+                start_round()
             }
         })
     })
@@ -527,8 +602,15 @@ function refresh_statement() {
     set_utterance(the_private, curr_proclamation['utterance'])
 }
 
+function reset_round() {
+    routes_known.forEach((route, _isl) => {
+    // console.log(route, isl)
+        route.send({"kind": "RESET"})
+}) 
+}
+
 function start_round() {
-    proposals_rejected = 0
+    proposals_rejected = new Set()
     prop_identifier = last_identifier + Math.ceil(Math.random()*1000)
     console.log("VAL: ", prop_identifier)
     curr_proclamation = Island.say_something(this_isle)

@@ -61,8 +61,8 @@ table {
 .status {
 	font-size: 150%;
 	font-style: italic;
-	padding: 20px;
-	margin: 40px;
+	padding: 2vh;
+	margin: 2vh;
 }
 .proposal {
 	margin: 40px;
