@@ -1,5 +1,7 @@
 FROM node
 WORKDIR /app
-COPY . /app/
-RUN ["npm","install"]
+COPY package.json package.json
+COPY package-lock.json package-lock.json
+RUN npm install
+COPY . .
 CMD ["node","app.js"]
